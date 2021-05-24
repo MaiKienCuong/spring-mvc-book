@@ -1,6 +1,8 @@
 package maikiencuong.controller;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.Base64;
@@ -82,8 +84,26 @@ public class MyController {
 			return "book-form";
 		}
 		Blob blob = Hibernate.getLobCreator(sessionFactory.getCurrentSession()).createBlob(multipartFile.getBytes());
-		byte[] encode = Base64.getEncoder().encode(blob.getBinaryStream().readAllBytes());
-		book.setImage(new String(encode));
+		// cach 1
+		try (InputStream is = blob.getBinaryStream(); ByteArrayOutputStream os = new ByteArrayOutputStream();) {
+			byte[] buffer = new byte[1024];
+			int read = is.read(buffer);
+			while (read != -1) {
+				os.write(buffer, 0, read);
+				read = is.read(buffer);
+			}
+			byte[] encode = Base64.getEncoder().encode(os.toByteArray());
+			book.setImage(new String(encode));
+		} catch (Exception e) {
+		}
+//		cach 2
+//		byte[] encode = Base64.getEncoder().encode(blob.getBytes(1, (int) blob.length()));
+//		book.setImage(new String(encode));
+
+//		cach 3
+//		byte[] encode = Base64.getEncoder().encode(blob.getBinaryStream().readAllBytes());
+//		book.setImage(new String(encode));
+
 		bookRepository.saveBook(book);
 		return "redirect:list";
 	}
